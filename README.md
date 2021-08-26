@@ -1,6 +1,6 @@
 # EthWallet
 
-**TODO: Add description**
+A Light Eth Wallet
 
 ## Installation
 
