@@ -1,6 +1,6 @@
 # EthWallet
 
-A Light Eth Wallet
+A Light Eth Wallet.
 
 ## Installation
 
