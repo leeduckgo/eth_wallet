@@ -3,8 +3,6 @@ defmodule Utils.Crypto do
     Crypto Lib
   """
 
-  # @secret_key "test"
-
   @address_prefix "0x"
   @address_size 40
 
@@ -100,11 +98,11 @@ defmodule Utils.Crypto do
     :crypto.block_encrypt(:aes_ecb, md5_pwd, pad(encrypted_key, 16))
   end
 
-  def decrypt_key(encrypted_key, password) do
+  def decrypt_key(payload, password) do
     md5_pwd = md5(password)
 
     :aes_ecb
-    |> :crypto.block_decrypt(md5_pwd, encrypted_key)
+    |> :crypto.block_decrypt(md5_pwd, payload)
     |> unpad()
   end
 

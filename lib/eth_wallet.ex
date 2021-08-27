@@ -35,6 +35,7 @@ defmodule EthWallet do
       pub: <<4, ..., 165, ...>>
     }
   """
+  @spec generate_keys(Binary.t()) :: Map.t()
   def generate_keys(priv) do
     %{pub: pub}
       = result
@@ -46,4 +47,27 @@ defmodule EthWallet do
     addr = Crypto.pubkey_to_address(pub)
     Map.put(result, :addr, addr)
   end
+
+  @doc """
+    encrypt key with password.
+
+    ## Examples
+
+    iex> EthWallet.encrypt_key("ddd", "abc")
+
+    <<40, 28, 220, 122, 235, 180, 216, 145, 142, 171, 53, 146, 25, 136, 47, 215>>
+
+  """
+  defdelegate encrypt_key(encrypted_key, password), to: Crypto
+
+  @doc """
+    decrypt key with password.
+
+    ## Examples
+
+    iex> EthWallet.decrypt_key(payload, "bbc")
+
+    "ddd"
+  """
+  defdelegate decrypt_key(payload, password), to: Crypto
 end
