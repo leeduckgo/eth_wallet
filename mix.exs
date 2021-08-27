@@ -4,28 +4,28 @@ defmodule EthWallet.MixProject do
   def project do
     [
       app: :eth_wallet,
-      version: "0.1.0",
+      version: "0.0.1",
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
-      description: description,
-      package: package,
+      description: description(),
+      package: package(),
       deps: deps()
     ]
   end
 
-  defp description do
+  defp description() do
     """
       a Light Eth Wallet
     """
   end
 
-  defp package do
+  defp package() do
     [
      files: ["lib", "mix.exs", "README.md"],
      maintainers: ["Leeduckgo"],
      licenses: ["Apache 2.0"],
-     links: %{"GitHub" => "",
-              "Docs" => "https://hexdocs.pm/simple_statistics/"}
+     links: %{"GitHub" => "https://github.com/leeduckgo/eth_wallet",
+              "Docs" => "https://hexdocs.pm/eth_wallet/"}
      ]
   end
 

@@ -89,25 +89,16 @@ defmodule Utils.Crypto do
 
   defp kec(data) do
     Utils.ExSha3.keccak_256(data)
-    # ExKeccak.hash_256(data)
   end
 
   # +------------------------------+
   # | encrypt the data in database |
   # +------------------------------+
 
-  # def encrypt_key(key) do
-  #   encrypt_key(key, @secret_key)
-  # end
-
-  # def encrypt_key(key, password) do
-  #   md5_pwd = md5(password)
-  #   :crypto.block_encrypt(:aes_ecb, md5_pwd, pad(key, 16))
-  # end
-
-  # def decrypt_key(key) do
-  #   decrypt_key(key, @secret_key)
-  # end
+  def encrypt_key(encrypted_key, password) do
+    md5_pwd = md5(password)
+    :crypto.block_encrypt(:aes_ecb, md5_pwd, pad(encrypted_key, 16))
+  end
 
   def decrypt_key(encrypted_key, password) do
     md5_pwd = md5(password)
