@@ -4,7 +4,7 @@ defmodule EthWallet.MixProject do
   def project do
     [
       app: :eth_wallet,
-      version: "0.0.1",
+      version: "0.0.2",
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -15,7 +15,7 @@ defmodule EthWallet.MixProject do
 
   defp description() do
     """
-      a Light Eth Wallet
+      a Light Eth Wallet.
     """
   end
 
