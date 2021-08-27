@@ -35,7 +35,7 @@ defmodule EthWallet do
       pub: <<4, ..., 165, ...>>
     }
   """
-  @spec generate_keys(Binary.t()) :: Map.t()
+  @spec generate_keys(binary()) :: map()
   def generate_keys(priv) do
     %{pub: pub}
       = result

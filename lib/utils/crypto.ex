@@ -70,15 +70,20 @@ defmodule EthWallet.Utils.Crypto do
   def generate_key_secp256k1() do
     {pubkey, privkey} = :crypto.generate_key(:ecdh, :secp256k1)
 
+    do_generate_key_secp256k1(pubkey, privkey)
+  end
+
+  def generate_key_secp256k1(privkey) do
+    {pubkey, privkey} = :crypto.generate_key(:ecdh, :secp256k1, privkey)
+    do_generate_key_secp256k1(pubkey, privkey)
+  end
+
+  defp do_generate_key_secp256k1(pubkey, privkey) do
     if byte_size(privkey) != 32 do
       generate_key_secp256k1()
     else
       %{pub: pubkey, priv: privkey}
     end
-  end
-
-  def generate_key_secp256k1(private_key) do
-    :crypto.generate_key(:ecdh, :secp256k1, private_key)
   end
 
   defp keccak_256sum(data) do
