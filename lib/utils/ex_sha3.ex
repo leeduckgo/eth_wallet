@@ -1,4 +1,4 @@
-defmodule Utils.ExSha3 do
+defmodule EthWallet.Utils.ExSha3 do
   @compile {:inline, exor: 5, band: 2, rol: 2, absorb: 6, squeeze: 4}
   use Bitwise, only_operators: true
 

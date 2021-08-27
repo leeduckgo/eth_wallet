@@ -1,7 +1,9 @@
-defmodule Utils.Crypto do
+defmodule EthWallet.Utils.Crypto do
   @moduledoc """
     Crypto Lib
   """
+
+  alias EthWallet.Utils.ExSha3
 
   @address_prefix "0x"
   @address_size 40
@@ -86,7 +88,7 @@ defmodule Utils.Crypto do
   end
 
   defp kec(data) do
-    Utils.ExSha3.keccak_256(data)
+    ExSha3.keccak_256(data)
   end
 
   # +------------------------------+

@@ -3,7 +3,7 @@ defmodule EthWallet do
     Documentation for `EthWallet`.
   """
 
-  alias Utils.Crypto
+  alias EthWallet.Utils.Crypto
 
   @doc """
     generate keys with/without privkey.
