@@ -32,10 +32,20 @@ defmodule EthWallet.Utils.Crypto do
     |> :binary.list_to_bin()
   end
 
-  def sign_hash(hash, private_key, chain_id \\ nil) do
+
+  @doc """
+    The test is here:
+
+    https://github.com/exthereum/exth_crypto/blob/master/lib/signature/signature.ex
+
+    Attention: hash should be 32 bytes.
+  """
+  @spec sign_hash(<<_ :: 256>>, <<_ :: 256>>, nil | integer()) ::
+          {non_neg_integer(), non_neg_integer(), non_neg_integer()}
+  def sign_hash(hash, privkey, chain_id \\ nil) do
     # {:libsecp256k1, "~> 0.1.9"} is useful.
     {:ok, <<r::size(256), s::size(256)>>, recovery_id} =
-      :libsecp256k1.ecdsa_sign_compact(hash, private_key, :default, <<>>)
+      :libsecp256k1.ecdsa_sign_compact(hash, privkey, :default, <<>>)
 
     recovery_id =
       if chain_id do
@@ -45,6 +55,23 @@ defmodule EthWallet.Utils.Crypto do
       end
 
     {recovery_id, r, s}
+  end
+
+
+  @doc """
+    The test is here:
+
+    https://github.com/exthereum/exth_crypto/blob/master/lib/signature/signature.ex
+
+    Attention: hash should be 32 bytes.
+  """
+  @spec sign_hash(<<_ :: 256>>, <<_ :: 512>>, binary()) ::
+  {non_neg_integer(), non_neg_integer(), non_neg_integer()}
+  def verify_hash(hash, sig, pubkey) do
+    case :libsecp256k1.ecdsa_verify(hash, sig, pubkey) do
+      :ok -> true
+      _ -> false
+    end
   end
 
   def sha256(data), do: :crypto.hash(:sha256, data)
@@ -63,8 +90,8 @@ defmodule EthWallet.Utils.Crypto do
     :crypto.verify(:ecdsa, :sha256, data, sig, [pubkey, :secp256k1])
   end
 
-  def secp256k1_sign(data, private_key) do
-    :crypto.sign(:ecdsa, :sha256, data, [private_key, :secp256k1])
+  def secp256k1_sign(data, privkey) do
+    :crypto.sign(:ecdsa, :sha256, data, [privkey, :secp256k1])
   end
 
   def generate_key_secp256k1() do

@@ -57,6 +57,9 @@ defmodule EthWallet.Transaction do
     "0x" <> raw_tx
   end
 
+  @doc """
+    v <> r <> s => Base64 编码，得最终版签名.
+  """
   @spec sign(Transaction.t(), binary(), integer() | nil) :: Transaction.t()
   def sign(tx, private_key, chain_id \\ nil) do
     {v, r, s} =
@@ -100,6 +103,19 @@ defmodule EthWallet.Transaction do
     end
   end
 
+  @doc """
+    iex(80)> :binary.encode_unsigned(12345)
+
+    "09"
+
+    iex(81)> "09" <> <<0>>
+
+    <<48, 57, 0>>
+
+    iex(83)> 48 * 256 + 57
+
+    12345
+  """
   @spec encode_unsigned(number()) :: binary()
   def encode_unsigned(0), do: <<>>
   def encode_unsigned(n), do: :binary.encode_unsigned(n)
