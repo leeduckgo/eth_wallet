@@ -92,7 +92,7 @@ defmodule EthWallet.Utils.Crypto do
     |> Base.encode16()
   end
 
-  defp kec(data) do
+  def kec(data) do
     ExSha3.keccak_256(data)
   end
 

@@ -1,10 +1,20 @@
 defmodule EthWallet do
   @moduledoc """
     Documentation for `EthWallet`.
+
+    - 1. keys operations
+
+    - 2. generate signed tx
+
+      tx generated path:
+
+      build_tx -> hash_for_signing(serialize -> rlp encode -> kec) -> gen sig -> get signed tx
+
+      -> to raw tx-> send tx to node
   """
 
   alias EthWallet.Utils.Crypto
-
+  alias EthWallet.Transaction
   @doc """
     generate keys with/without privkey.
 
@@ -70,4 +80,23 @@ defmodule EthWallet do
     "ddd"
   """
   defdelegate decrypt_key(payload, password), to: Crypto
+
+  @doc """
+    build transaction
+  """
+  @spec build_tx(String.t(), integer(), binary(), integer(), integer(), integer()) :: Transction.t()
+  defdelegate build_tx(to_str, value, data, nonce, gas_price, gas_limit), to: Transaction
+
+  @doc """
+    sign transaction
+  """
+  @spec sign(Transaction.t(), binary(), integer() | nil) :: Transaction.t()
+  defdelegate sign(tx, private_key, chain_id \\ nil), to: Transaction
+
+    @doc """
+    signed transaction to raw transaction
+  """
+  @spec signed_tx_to_raw_tx(Transaction.t()) :: String.t()
+  defdelegate signed_tx_to_raw_tx(signed_tx), to: Transaction
+
 end
