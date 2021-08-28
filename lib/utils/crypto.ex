@@ -86,12 +86,12 @@ defmodule EthWallet.Utils.Crypto do
         ) :: binary
   def double_sha256(data), do: data |> sha256 |> sha256
 
-  def secp256k1_verify(data, sig, pubkey) do
-    :crypto.verify(:ecdsa, :sha256, data, sig, [pubkey, :secp256k1])
+  def verify_msg_sig(msg, sig, pubkey) do
+    :crypto.verify(:ecdsa, :sha256, msg, sig, [pubkey, :secp256k1])
   end
 
-  def secp256k1_sign(data, privkey) do
-    :crypto.sign(:ecdsa, :sha256, data, [privkey, :secp256k1])
+  def sign_msg(msg, privkey) do
+    :crypto.sign(:ecdsa, :sha256, msg, [privkey, :secp256k1])
   end
 
   def generate_key_secp256k1() do

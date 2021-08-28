@@ -90,13 +90,18 @@ defmodule EthWallet do
   @doc """
     sign transaction
   """
-  @spec sign(Transaction.t(), binary(), integer() | nil) :: Transaction.t()
-  defdelegate sign(tx, private_key, chain_id \\ nil), to: Transaction
+  @spec sign_tx(Transaction.t(), binary(), integer() | nil) :: Transaction.t()
+  defdelegate sign_tx(tx, private_key, chain_id \\ nil), to: Transaction
 
-    @doc """
+  @doc """
     signed transaction to raw transaction
   """
   @spec signed_tx_to_raw_tx(Transaction.t()) :: String.t()
   defdelegate signed_tx_to_raw_tx(signed_tx), to: Transaction
 
+  @spec sign_msg(binary(), binary()) :: binary()
+  defdelegate sign_msg(msg, privkey), to: Crypto
+
+  @spec verify_msg_sig(binary(), binary(), binary()) :: boolean()
+  defdelegate verify_msg_sig(msg, sig, privkey), to: Crypto
 end

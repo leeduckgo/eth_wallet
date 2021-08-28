@@ -60,8 +60,8 @@ defmodule EthWallet.Transaction do
   @doc """
     v <> r <> s => Base64 编码，得最终版签名.
   """
-  @spec sign(Transaction.t(), binary(), integer() | nil) :: Transaction.t()
-  def sign(tx, private_key, chain_id \\ nil) do
+  @spec sign_tx(Transaction.t(), binary(), integer() | nil) :: Transaction.t()
+  def sign_tx(tx, private_key, chain_id \\ nil) do
     {v, r, s} =
       tx
       |> hash_for_signing(chain_id)
