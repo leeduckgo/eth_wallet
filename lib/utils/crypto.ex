@@ -127,30 +127,37 @@ defmodule EthWallet.Utils.Crypto do
   # | encrypt the data in database |
   # +------------------------------+
 
-  def encrypt_key(encrypted_key, password) do
+  @spec encrypt_key(binary(),binary()) :: binary()
+  def encrypt_key(unencrypted_key, password) do
     md5_pwd = md5(password)
-    :crypto.block_encrypt(:aes_ecb, md5_pwd, pad(encrypted_key, 16))
+    {:ok, {init_vec, cipher_text}} = ExCrypto.encrypt(md5_pwd, unencrypted_key)
+    # init_vec: 16 bytes
+    init_vec <> cipher_text
   end
 
-  def decrypt_key(payload, password) do
+  @spec decrypt_key(binary(),binary()) :: binary()
+  def decrypt_key(encrypted_key, password) do
     md5_pwd = md5(password)
+    <<init_vec :: binary-size(16), cipher_text :: binary>> = encrypted_key
+    # :aes_ecb
+    # |> :crypto.block_decrypt(md5_pwd, payload)
+    # |> unpad()
 
-    :aes_ecb
-    |> :crypto.block_decrypt(md5_pwd, payload)
-    |> unpad()
+    {:ok, unencrypted_key} = ExCrypto.decrypt(md5_pwd, init_vec, cipher_text)
+    unencrypted_key
   end
 
-  defp pad(data, block_size) do
+  def pad(data, block_size) do
     to_add = block_size - rem(byte_size(data), block_size)
     data <> to_string(:string.chars(to_add, to_add))
   end
 
-  defp unpad(data) do
+  def unpad(data) do
     to_remove = :binary.last(data)
     :binary.part(data, 0, byte_size(data) - to_remove)
   end
 
-  defp md5(data) do
+  def md5(data) do
     :md5
     |> :crypto.hash(data)
     |> Base.encode16(case: :lower)
