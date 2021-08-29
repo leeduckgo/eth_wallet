@@ -96,13 +96,12 @@ defmodule EthWallet.Utils.Crypto do
 
   def generate_key_secp256k1() do
     {pubkey, privkey} = :crypto.generate_key(:ecdh, :secp256k1)
-
     do_generate_key_secp256k1(pubkey, privkey)
   end
 
   def generate_key_secp256k1(privkey) do
     {pubkey, privkey} = :crypto.generate_key(:ecdh, :secp256k1, privkey)
-    do_generate_key_secp256k1(pubkey, privkey)
+    %{pub: pubkey, priv: privkey}
   end
 
   defp do_generate_key_secp256k1(pubkey, privkey) do
