@@ -65,8 +65,7 @@ defmodule EthWallet.Utils.Crypto do
 
     Attention: hash should be 32 bytes.
   """
-  @spec sign_hash(<<_ :: 256>>, <<_ :: 512>>, binary()) ::
-  {non_neg_integer(), non_neg_integer(), non_neg_integer()}
+  @spec verify_hash(<<_ :: 256>>, <<_ :: 512>>, binary()) :: boolean()
   def verify_hash(hash, sig, pubkey) do
     case :libsecp256k1.ecdsa_verify(hash, sig, pubkey) do
       :ok -> true
@@ -77,20 +76,15 @@ defmodule EthWallet.Utils.Crypto do
   def sha256(data), do: :crypto.hash(:sha256, data)
   def ripemd160(data), do: :crypto.hash(:ripemd160, data)
 
-  @spec double_sha256(
-          binary
-          | maybe_improper_list(
-              binary | maybe_improper_list(any, binary | []) | byte,
-              binary | []
-            )
-        ) :: binary
-  def double_sha256(data), do: data |> sha256 |> sha256
+  @spec double_sha256(binary) :: binary
+  def double_sha256(data), do: data |> sha256() |> sha256()
 
   def verify_msg_sig(msg, sig, pubkey) do
     :crypto.verify(:ecdsa, :sha256, msg, sig, [pubkey, :secp256k1])
   end
 
   def sign_msg(msg, privkey) do
+    # equal to :libsecp256k1.ecdsa_sign(msg, priv, :default, <<>>)
     :crypto.sign(:ecdsa, :sha256, msg, [privkey, :secp256k1])
   end
 
