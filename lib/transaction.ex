@@ -62,10 +62,10 @@ defmodule EthWallet.Transaction do
   """
   @spec sign_tx(Transaction.t(), binary(), integer() | nil) :: Transaction.t()
   def sign_tx(tx, private_key, chain_id \\ nil) do
-    {v, r, s} =
+    %{v: v, r: r, s: s} =
       tx
       |> hash_for_signing(chain_id)
-      |> Crypto.sign_hash(private_key, chain_id)
+      |> Crypto.sign_compact(private_key, chain_id)
 
     %{tx | v: v, r: r, s: s}
   end

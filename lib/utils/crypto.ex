@@ -33,30 +33,30 @@ defmodule EthWallet.Utils.Crypto do
   end
 
 
-  @doc """
-    The test is here:
-
-    https://github.com/exthereum/exth_crypto/blob/master/lib/signature/signature.ex
-
-    Attention: hash should be 32 bytes.
-  """
-  @spec sign_hash(<<_ :: 256>>, <<_ :: 256>>, nil | integer()) ::
-          {non_neg_integer(), non_neg_integer(), non_neg_integer()}
-  def sign_hash(hash, privkey, chain_id \\ nil) do
-    # {:libsecp256k1, "~> 0.1.9"} is useful.
-    {:ok, <<r::size(256), s::size(256)>>, recovery_id} =
-      :libsecp256k1.ecdsa_sign_compact(hash, privkey, :default, <<>>)
-
+  def recover(digest, signature, recovery_id_handled , chain_id \\ nil) do
     recovery_id =
-      if chain_id do
-        chain_id * 2 + @base_recovery_id_eip_155 + recovery_id
-      else
-        @base_recovery_id + recovery_id
-      end
-
-    {recovery_id, r, s}
+      recovery_id_handled_to_recovery_id(recovery_id_handled, chain_id)
+    case :libsecp256k1.ecdsa_recover_compact(digest, signature, :uncompressed, recovery_id) do
+      {:ok, public_key} -> {:ok, public_key}
+      {:error, reason} -> {:error, to_string(reason)}
+    end
   end
 
+  defp recovery_id_to_recovery_id_handled(recovery_id, chain_id) do
+    if chain_id do
+      chain_id * 2 + @base_recovery_id_eip_155 + recovery_id
+    else
+      @base_recovery_id + recovery_id
+    end
+  end
+
+  defp recovery_id_handled_to_recovery_id(recovery_id_handled, chain_id) do
+    if chain_id do
+      recovery_id_handled - chain_id * 2 - @base_recovery_id_eip_155
+    else
+      recovery_id_handled - @base_recovery_id
+    end
+  end
 
   @doc """
     The test is here:
@@ -65,9 +65,34 @@ defmodule EthWallet.Utils.Crypto do
 
     Attention: hash should be 32 bytes.
   """
-  @spec verify_hash(<<_ :: 256>>, <<_ :: 512>>, binary()) :: boolean()
-  def verify_hash(hash, sig, pubkey) do
-    case :libsecp256k1.ecdsa_verify(hash, sig, pubkey) do
+  def sign_compact(digest, privkey, chain_id \\ nil) do
+    # {:libsecp256k1, "~> 0.1.9"} is useful.
+    {:ok, <<r::size(256), s::size(256)>> = sig, recovery_id} =
+      :libsecp256k1.ecdsa_sign_compact(digest, privkey, :default, <<>>)
+
+    recovery_id_handled =
+      recovery_id_to_recovery_id_handled(recovery_id, chain_id)
+
+    %{v: recovery_id_handled, r: r, s: s, sig: sig}
+  end
+
+  @doc """
+    The test is here:
+
+    https://github.com/exthereum/exth_crypto/blob/master/lib/signature/signature.ex
+
+    Attention: hash should be 32 bytes.
+  """
+  def verify(digest, sig, pubkey) do
+    # :crypto.verify(:ecdsa, :sha256, msg, sig, [pubkey, :secp256k1])
+    case :libsecp256k1.ecdsa_verify(digest, sig, pubkey) do
+      :ok -> true
+      _ -> false
+    end
+  end
+
+  def verify_compact(digest, sig, pubkey) do
+    case :libsecp256k1.ecdsa_verify_compact(digest, sig, pubkey) do
       :ok -> true
       _ -> false
     end
@@ -79,13 +104,18 @@ defmodule EthWallet.Utils.Crypto do
   @spec double_sha256(binary) :: binary
   def double_sha256(data), do: data |> sha256() |> sha256()
 
-  def verify_msg_sig(msg, sig, pubkey) do
-    :crypto.verify(:ecdsa, :sha256, msg, sig, [pubkey, :secp256k1])
-  end
-
-  def sign_msg(msg, privkey) do
-    # equal to :libsecp256k1.ecdsa_sign(msg, priv, :default, <<>>)
+  @doc """
     :crypto.sign(:ecdsa, :sha256, msg, [privkey, :secp256k1])
+
+    equal to
+
+    msg |> sha256() |> :libsecp256k1.ecdsa_sign
+
+    - sha256 digest using for bitcoin
+  """
+  def sign(digest, priv) do
+    {:ok, res} = :libsecp256k1.ecdsa_sign(digest, priv, :default, <<>>)
+    res
   end
 
   def generate_key_secp256k1() do
@@ -132,9 +162,6 @@ defmodule EthWallet.Utils.Crypto do
   def decrypt_key(encrypted_key, password) do
     md5_pwd = md5(password)
     <<init_vec :: binary-size(16), cipher_text :: binary>> = encrypted_key
-    # :aes_ecb
-    # |> :crypto.block_decrypt(md5_pwd, payload)
-    # |> unpad()
 
     {:ok, unencrypted_key} = ExCrypto.decrypt(md5_pwd, init_vec, cipher_text)
     unencrypted_key
