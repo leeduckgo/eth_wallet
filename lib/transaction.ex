@@ -58,7 +58,16 @@ defmodule EthWallet.Transaction do
   end
 
   @doc """
-    v <> r <> s => Base64 编码，得最终版签名.
+
+    > https://b10c.me/blog/006-evolution-of-the-bitcoin-signature-length/
+
+    > https://bitcoin.stackexchange.com/questions/12554/why-the-signature-is-always-65-13232-bytes-long
+
+    Bitcoin:  0x30 [total-length] 0x02 [R-length] [R] 0x02 [S-length] [S]
+
+    Attetion: SigHash Flag should be append to the last in finally signature.
+
+    Ethereum: R <> S <> V (V = recid + chainID * 2 + 35)
   """
   @spec sign_tx(Transaction.t(), binary(), integer() | nil) :: Transaction.t()
   def sign_tx(tx, private_key, chain_id \\ nil) do

@@ -111,6 +111,8 @@ defmodule EthWallet.Utils.Crypto do
 
     msg |> sha256() |> :libsecp256k1.ecdsa_sign
 
+    > sig format: 0x30 [total-length] 0x02 [R-length] [R] 0x02 [S-length] [S]
+
     - sha256 digest using for bitcoin
   """
   def sign(digest, priv) do
