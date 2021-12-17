@@ -1,0 +1,353 @@
+<!-- livebook:{"persist_outputs":true} -->
+
+# Little Guide of eth_wallet
+
+## 0x00 Preface
+
+> Remember to Link Runtime to eth_wallet!
+
+## 0x01 Generate Keys
+
+**Step 0x01.** Generate Keys(Priv and Pub) by secp256k1:
+
+```
+ {pubkey, privkey} = :crypto.generate_key(:ecdh, :secp256k1)
+ {pubkey, privkey} = :crypto.generate_key(:ecdh, :secp256k1, privkey)
+```
+
+**Step 0x02** Pubkey to Addr:
+
+```
+  @address_size 40
+  
+  defp pubkey_to_hex(public_key) do
+    public_key
+    |> strip_leading_byte()
+    |> keccak_256sum()
+    |> String.slice(@address_size * -1, @address_size)
+    |> String.downcase()
+  end
+```
+
+```
+ defp keccak_256sum(data) do
+    data
+    |> kec()
+    |> Base.encode16()
+  end
+
+  def kec(data) do
+    ExSha3.keccak_256(data)
+  end
+```
+
+```elixir
+EthWallet.generate_keys()
+```
+
+```output
+%{
+  addr: "0x47ec2193b73b8b003645760df71569ae5e4b810c",
+  priv: <<179, 57, 147, 246, 138, 161, 157, 91, 107, 216, 233, 48, 101, 29, 134, 144, 159, 60, 19,
+    74, 2, 54, 0, 229, 207, 243, 60, 124, 244, 9, 123, 148>>,
+  pub: <<4, 55, 136, 222, 230, 58, 251, 181, 80, 218, 32, 32, 98, 161, 105, 198, 228, 22, 123, 211,
+    63, 23, 172, 130, 39, 34, 184, 155, 75, 92, 229, 101, 100, 82, 150, 187, 138, 22, 109, 147, 26,
+    200, 28, 243, 6, 4, 137, ...>>
+}
+```
+
+## 0x02 Encrypt Keys for Database Saving
+
+```elixir
+priv =
+  <<179, 57, 147, 246, 138, 161, 157, 91, 107, 216, 233, 48, 101, 29, 134, 144, 159, 60, 19, 74,
+    2, 54, 0, 229, 207, 243, 60, 124, 244, 9, 123, 148>>
+
+EthWallet.encrypt_key(priv, "abcdefg")
+```
+
+```output
+<<48, 139, 144, 30, 52, 58, 66, 201, 227, 43, 238, 134, 90, 103, 233, 249, 233, 34, 36, 16, 68, 254,
+  183, 4, 127, 47, 84, 195, 99, 114, 31, 160, 221, 56, 52, 255, 75, 164, 192, 239, 129, 61, 220,
+  205, 161, 163, 172, 29, 94, 17, ...>>
+```
+
+## 0x03 Build Transaction
+
+Struct of Transaction:
+
+```
+  @type t :: %__MODULE__{
+          nonce: integer(),
+          gas_price: integer(),
+          gas_limit: integer(),
+          to: <<_::160>> | <<_::0>>,
+          value: integer(),
+          # contract machine code
+          init: binary(),
+          data: binary(),
+
+          # signature
+          v: integer(),
+          r: integer(),
+          s: integer(),
+        }
+```
+
+Func to transfer addr to bin:
+
+```
+  @spec addr_to_bin(String.t()) :: binary()
+  def addr_to_bin(addr_str) do
+    addr_str
+    |> String.replace("0x", "")
+    |> Base.decode16!(case: :mixed)
+  end
+```
+
+Example:
+
+```elixir
+gas_price = 20_000_000_000
+gas_limit = 300_000
+EthWallet.build_tx("0x47ec2193b73b8b003645760df71569ae5e4b810c", 1, <<>>, 3, gas_price, gas_limit)
+```
+
+```output
+%EthWallet.Transaction{
+  data: "",
+  gas_limit: 300000,
+  gas_price: 20000000000,
+  init: "",
+  nonce: 3,
+  r: nil,
+  s: nil,
+  to: <<71, 236, 33, 147, 183, 59, 139, 0, 54, 69, 118, 13, 247, 21, 105, 174, 94, 75, 129, 12>>,
+  v: nil,
+  value: 1
+}
+```
+
+### Knowledge about gas
+
+* Ether (ETH) is the Ethereum network's native cryptocurrency, the second-largest by market cap on the crypto market.
+
+* Gas is the unit of calculation that indicates the fee for a particular action or transaction.
+
+* The Gas Limit is the maximum amount of Gas that a user is willing to pay for performing this action or confirming a transaction (a minimum of 21,000).
+
+* The price of Gas (Gas Price) is the amount of Gwei that the user is willing to spend on each unit of Gas.
+
+> 1 ether = 1 x 10^18 wei = 1 x 10^9 Gwei
+
+U can check the gas fee by Etherscan or the Blocknative Chrome Plugin.
+
+### Knowledge about data
+
+if you only transfer ether, data is empty;
+but it's necessary if you send transaction to a contract or deploy a contract.
+
+<!-- livebook:{"break_markdown":true} -->
+
+### Knowledge about Nonce
+
+A scalar value equal to the number of transactions sent from this address or, in the case of accounts with associated code, the number of contract-creations made by this account.
+
+```elixir
+# Nonce begin from zero, so tx_count = nonce
+@spec get_nonce(String.t()) :: integer
+def get_nonce(addr) do
+  # HttpClient is a module in Ethereumex
+  {:ok, hex} = HttpClient.eth_get_transaction_count(addr)
+  TypeTranslator.hex_to_int(hex)
+end
+```
+
+You can check the api here:
+
+> https://infura.io/docs/ethereum/json-rpc/eth-getTransactionCount
+
+**REQUEST PARAMS**
+
+* ADDRESS [required] - a string representing the address (20 bytes) to check for transaction count for
+* BLOCK PARAMETER [required] - an integer block number, or the string "latest", "earliest" or "pending", see the default block parameter
+
+```bash
+curl https://mainnet.infura.io/v3/YOUR-PROJECT-ID \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"jsonrpc":"2.0","method":"eth_getTransactionCount","params": ["0xc94770007dda54cF92009BFF0dE90c06F603a09f","0x5bad55"],"id":1}'
+```
+
+## 0x04 Sign Transaction
+
+sign transaction by transaction generate above and privkey:
+
+```
+  @spec sign_tx(Transaction.t(), binary(), integer() | nil) :: Transaction.t()
+  def sign_tx(tx, private_key, chain_id \\ nil) do
+    %{v: v, r: r, s: s} =
+      tx
+      |> hash_for_signing(chain_id)
+      |> Crypto.sign_compact(private_key, chain_id)
+
+    %{tx | v: v, r: r, s: s}
+  end
+
+  @spec hash_for_signing(Transaction.t(), integer() | nil) :: binary()
+  def hash_for_signing(tx, chain_id \\ nil) do
+    # See EIP-155
+    tx
+    |> serialize(false)
+    |> Kernel.++(if chain_id, do: [:binary.encode_unsigned(chain_id), <<>>, <<>>], else: [])
+    |> ExRLP.encode(encoding: :binary)
+    |> Crypto.kec()
+  end
+```
+
+Finally get r, s, v.
+
+The explaination a bout signature and r, s, v:
+
+> https://ethfans.org/posts/the-magic-of-digital-signatures-on-ethereum
+
+```elixir
+priv =
+  <<179, 57, 147, 246, 138, 161, 157, 91, 107, 216, 233, 48, 101, 29, 134, 144, 159, 60, 19, 74,
+    2, 54, 0, 229, 207, 243, 60, 124, 244, 9, 123, 148>>
+
+gas_price = 20_000_000_000
+gas_limit = 300_000
+
+tx =
+  EthWallet.build_tx(
+    "0x47ec2193b73b8b003645760df71569ae5e4b810c",
+    1,
+    <<>>,
+    3,
+    gas_price,
+    gas_limit
+  )
+
+EthWallet.sign_tx(tx, priv)
+```
+
+```output
+%EthWallet.Transaction{
+  data: "",
+  gas_limit: 300000,
+  gas_price: 20000000000,
+  init: "",
+  nonce: 3,
+  r: 67243437211985125846499025668706844111533160274980950914994922050681896081880,
+  s: 56427494744604503742191182187154037327356481500982047507792388036469495366909,
+  to: <<71, 236, 33, 147, 183, 59, 139, 0, 54, 69, 118, 13, 247, 21, 105, 174, 94, 75, 129, 12>>,
+  v: 27,
+  value: 1
+}
+```
+
+## 0x05 Get Raw Transaction
+
+Signed Tx to Raw:
+
+```
+  @spec signed_tx_to_raw_tx(Transaction.t()) :: String.t()
+  def signed_tx_to_raw_tx(signed_tx) do
+    raw_tx =
+      signed_tx
+      |> serialize()
+      |> ExRLP.encode(encoding: :hex)
+
+    "0x" <> raw_tx
+  end
+```
+
+Serialize:
+
+```
+ @spec serialize(Transaction.t(), boolean()) :: ExRLP.t()
+  def serialize(tx, include_vrs \\ true) do
+    base = [
+      encode_unsigned(tx.nonce),
+      encode_unsigned(tx.gas_price),
+      encode_unsigned(tx.gas_limit),
+      tx.to,
+      encode_unsigned(tx.value),
+      if(tx.to == <<>>, do: tx.init, else: tx.data)
+    ]
+
+    if include_vrs do
+      base ++
+        [
+          encode_unsigned(tx.v),
+          encode_unsigned(tx.r),
+          encode_unsigned(tx.s)
+        ]
+    else
+      base
+    end
+  end
+
+  @doc """
+    iex(80)> :binary.encode_unsigned(12345)
+
+    "09"
+
+    iex(81)> "09" <> <<0>>
+
+    <<48, 57, 0>>
+
+    iex(83)> 48 * 256 + 57
+
+    12345
+  """
+  @spec encode_unsigned(number()) :: binary()
+  def encode_unsigned(0), do: <<>>
+  def encode_unsigned(n), do: :binary.encode_unsigned(n)
+```
+
+```elixir
+priv =
+  <<179, 57, 147, 246, 138, 161, 157, 91, 107, 216, 233, 48, 101, 29, 134, 144, 159, 60, 19, 74,
+    2, 54, 0, 229, 207, 243, 60, 124, 244, 9, 123, 148>>
+
+gas_price = 20_000_000_000
+gas_limit = 300_000
+
+tx =
+  EthWallet.build_tx(
+    "0x47ec2193b73b8b003645760df71569ae5e4b810c",
+    1,
+    <<>>,
+    3,
+    gas_price,
+    gas_limit
+  )
+
+signed_tx = EthWallet.sign_tx(tx, priv)
+EthWallet.signed_tx_to_raw_tx(signed_tx)
+```
+
+```output
+"0xf865038504a817c800830493e09447ec2193b73b8b003645760df71569ae5e4b810c01801ba094aa6fcd002671653c2ceb94d726f0916c3e6b1a136b3c27883625fe9eda99d8a07cc0d489bee5a6ed2e6373d2572472217adf5bfa057fc3cd018b201c376b04fd"
+```
+
+## 0x06 Send Transaction
+
+> ! The func is impl by ethereumex, so I am not set it in wallet.
+
+Check the api here:
+
+> https://infura.io/docs/ethereum/json-rpc/eth-sendRawTransaction
+
+REQUEST PAYLOAD
+
+* RANSACTION DATA [required] - The signed transaction data.
+
+```bash
+curl https://mainnet.infura.io/v3/YOUR-PROJECT-ID \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675"],"id":1}'
+```
