@@ -10,7 +10,7 @@ by adding `eth_wallet` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:eth_wallet, "~> 0.0.13"}
+    {:eth_wallet, "~> 0.0.14"}
   ]
 end
 ```

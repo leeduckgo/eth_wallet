@@ -72,8 +72,11 @@ defmodule EthWallet.Utils.Crypto do
 
     recovery_id_handled =
       recovery_id_to_recovery_id_handled(recovery_id, chain_id)
-
-    %{v: recovery_id_handled, r: r, s: s, sig: sig}
+    sig_hex =
+      sig
+      |> Kernel.<>(<<recovery_id_handled>>)
+      |> Base.encode16(case: :lower)
+    %{v: recovery_id_handled, r: r, s: s, sig: "0x#{sig_hex}"}
   end
 
   @doc """
@@ -184,4 +187,5 @@ defmodule EthWallet.Utils.Crypto do
     |> :crypto.hash(data)
     |> Base.encode16(case: :lower)
   end
+
 end
