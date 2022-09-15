@@ -111,7 +111,11 @@ defmodule EthWallet do
     sign compact, as sign in ethereum.
   """
   @spec sign_compact(<<_ :: 256>>, <<_ :: 256>>, nil | integer()) :: %{v: integer(), r: integer(), s: integer(), sig: <<_::512>>}
-  defdelegate sign_compact(digest, privkey, chain_id \\ nil), to: Crypto
+  def sign_compact(digest, privkey, chain_id \\ nil) do
+    digest
+    |> standard_hash()
+    |> Crypto.sign_compact(privkey, chain_id)
+  end
 
   @doc """
     verify uncompact, fit to sign()
@@ -120,7 +124,7 @@ defmodule EthWallet do
   defdelegate verify(digest, sig, pubkey), to: Crypto
 
   @doc """
-    verify by msg, sig and addr, fit to "msg |> standard_hash |> sign_compact"
+    verify by msg, sig and addr, fit to "sign_compact()"
   """
   @spec verify_compact(String.t(), String.t(), String.t()) :: boolean()
   def verify_compact(msg_unhashed, sig, addr) do
