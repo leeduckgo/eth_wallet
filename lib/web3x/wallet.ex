@@ -80,8 +80,8 @@ defmodule EthWallet.Web3x.Wallet do
 
   def verify_signature(hash, signature) do
     {r, s, v} = destructure_sig(signature)
-    :libsecp256k1.ecdsa_recover_compact(hash, r <> s, :uncompressed, v)
-    # ExSecp256k1.recover_compact(hash, r <> s, v)
+    # :libsecp256k1.ecdsa_recover_compact(hash, r <> s, :uncompressed, v)
+    ExSecp256k1.recover_compact(hash, r <> s, v)
   end
 
   @doc "Verifies if a message was signed by a wallet keypair given a the public address, message, signature"

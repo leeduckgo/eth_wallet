@@ -36,7 +36,7 @@ defmodule EthWallet.Utils.Crypto do
   def recover(digest, signature, recovery_id_handled , chain_id \\ nil) do
     recovery_id =
       recovery_id_handled_to_recovery_id(recovery_id_handled, chain_id)
-    case :libsecp256k1.ecdsa_recover_compact(digest, signature, :uncompressed, recovery_id) do
+    case ExSecp256k1.recover_compact(digest, signature, recovery_id) do
       {:ok, public_key} -> {:ok, public_key}
       {:error, reason} -> {:error, to_string(reason)}
     end
@@ -67,9 +67,9 @@ defmodule EthWallet.Utils.Crypto do
   """
   def sign_compact(digest, privkey, chain_id \\ nil) do
     # {:libsecp256k1, "~> 0.1.9"} is useful.
-    {:ok, <<r::size(256), s::size(256)>> = sig, recovery_id} =
-      :libsecp256k1.ecdsa_sign_compact(digest, privkey, :default, <<>>)
-
+    {:ok, {<<r::size(256), s::size(256)>> = sig, recovery_id}} =
+      ExSecp256k1.sign_compact(digest, privkey)
+      
     recovery_id_handled =
       recovery_id_to_recovery_id_handled(recovery_id, chain_id)
     sig_hex =
@@ -95,7 +95,7 @@ defmodule EthWallet.Utils.Crypto do
   end
 
   def verify_compact(digest, sig, pubkey) do
-    case :libsecp256k1.ecdsa_verify_compact(digest, sig, pubkey) do
+    case ExSecp256k1.verify(digest, sig, pubkey) do
       :ok -> true
       _ -> false
     end

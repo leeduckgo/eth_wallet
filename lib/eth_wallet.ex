@@ -108,6 +108,15 @@ defmodule EthWallet do
   defdelegate sign(digest, privkey), to: Crypto
 
   @doc """
+    verify uncompact, fit to sign()
+  """
+  @spec verify(binary(), binary(), binary()) :: boolean()
+  defdelegate verify(digest, sig, pubkey), to: Crypto
+
+  # +----------------------+
+  # | Ethereum Sign/Verify |
+  # +----------------------+
+  @doc """
     sign compact, as sign in ethereum.
   """
   @spec sign_compact(<<_ :: 256>>, <<_ :: 256>>, nil | integer()) :: %{v: integer(), r: integer(), s: integer(), sig: <<_::512>>}
@@ -117,13 +126,7 @@ defmodule EthWallet do
     |> Crypto.sign_compact(privkey, chain_id)
   end
 
-  @doc """
-    verify uncompact, fit to sign()
-  """
-  @spec verify(binary(), binary(), binary()) :: boolean()
-  defdelegate verify(digest, sig, pubkey), to: Crypto
-
-  @doc """
+    @doc """
     verify by msg, sig and addr, fit to "sign_compact()"
   """
   @spec verify_compact(String.t(), String.t(), String.t()) :: boolean()
